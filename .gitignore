@@ -26,3 +26,7 @@ venv/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# venv
+venv/
+edutech/
