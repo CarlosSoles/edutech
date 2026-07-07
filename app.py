@@ -41,6 +41,7 @@ def main():
         # If logged in as admin
         if st.session_state.role == "admin":
             pages["Administración"] = [st.Page("src/views/admin_dashboard.py", title="Dashboard Admin", icon="⚙️")]
+            pages["Cuenta"] = [st.Page("src/views/logout.py", title="Cerrar Sesión", icon="🚪")]
         
         # If logged in as docente
         elif st.session_state.role == "docente":
