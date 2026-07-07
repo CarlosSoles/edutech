@@ -1,6 +1,6 @@
 streamlit
 supabase
-google-generativeai
+google-genai
 groq
 python-docx
 fpdf2
