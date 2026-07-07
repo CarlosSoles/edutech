@@ -59,6 +59,17 @@ def main():
         
     # Execute the new native navigation API
     pg = st.navigation(pages)
+    
+    # Manejar redirecciones de manera segura usando objetos st.Page
+    if st.session_state.get("redirect_to"):
+        target_title = st.session_state.redirect_to
+        st.session_state.redirect_to = None
+        for group, page_list in pages.items():
+            for p in page_list:
+                if p.title == target_title:
+                    st.switch_page(p)
+                    break
+                    
     pg.run()
     
 if __name__ == "__main__":

@@ -82,7 +82,8 @@ with col_centro:
                                 st.session_state.logged_in = True
                                 st.session_state.role = "docente"
                                 st.session_state.user_info = user_data
-                                st.switch_page("src/views/dashboard.py")
+                                st.session_state.redirect_to = "Inicio"
+                                st.rerun()
                             else:
                                 st.error("Usuario o contraseña incorrectos.")
                         except Exception as e:
@@ -102,6 +103,7 @@ with col_centro:
                         st.session_state.logged_in = True
                         st.session_state.role = "admin"
                         st.session_state.user_info = {"nombre": "Administrador Principal"}
-                        st.switch_page("src/views/admin_dashboard.py")
+                        st.session_state.redirect_to = "Dashboard Admin"
+                        st.rerun()
                     else:
                         st.error("Contraseña incorrecta.")
