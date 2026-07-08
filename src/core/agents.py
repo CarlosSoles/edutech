@@ -11,7 +11,12 @@ from src.core.prompts import PROMPT_GEMINI_EXTRACTOR
 class AgentGemini:
     def __init__(self):
         # Obtenemos la llave de los secrets o de las variables de entorno
-        api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        try:
+            api_key = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            api_key = None
+            
+        api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("No se encontró GEMINI_API_KEY")
             
@@ -65,7 +70,12 @@ class AgentGemini:
 
 class AgentAdvisor:
     def __init__(self):
-        api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        try:
+            api_key = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            api_key = None
+            
+        api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("No se encontró GEMINI_API_KEY")
             
