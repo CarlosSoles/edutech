@@ -161,7 +161,16 @@ if st.session_state.parsed_data and not st.session_state.registro_guardado:
             })
             st.markdown("<br>", unsafe_allow_html=True)
             
-        submitted = st.form_submit_button("✅ Aprobar y Guardar Cuaderno de Campo", type="primary")
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            submitted = st.form_submit_button("✅ Aprobar y Guardar Cuaderno de Campo", type="primary")
+        with col_btn2:
+            discarded = st.form_submit_button("❌ Descartar Registro", type="secondary")
+            
+        if discarded:
+            st.session_state.parsed_data = None
+            st.session_state.photo_id = None
+            st.rerun()
         
         if submitted:
             try:
