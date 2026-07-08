@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import base64
 import io
+import os
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -9,10 +10,10 @@ from src.core.prompts import PROMPT_GEMINI_EXTRACTOR
 
 class AgentGemini:
     def __init__(self):
-        # Obtenemos la llave de los secrets de Streamlit
-        api_key = st.secrets.get("GEMINI_API_KEY")
+        # Obtenemos la llave de los secrets o de las variables de entorno
+        api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("No se encontró GEMINI_API_KEY en secrets.toml")
+            raise ValueError("No se encontró GEMINI_API_KEY")
             
         self.client = genai.Client(api_key=api_key)
         # Usamos flash porque es ultra rápido y barato/gratis para imágenes + texto
@@ -64,9 +65,9 @@ class AgentGemini:
 
 class AgentAdvisor:
     def __init__(self):
-        api_key = st.secrets.get("GEMINI_API_KEY")
+        api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("No se encontró GEMINI_API_KEY en secrets.toml")
+            raise ValueError("No se encontró GEMINI_API_KEY")
             
         self.client = genai.Client(api_key=api_key)
         self.model_name = "gemini-2.5-flash"
