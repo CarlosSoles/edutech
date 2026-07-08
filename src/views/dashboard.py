@@ -60,7 +60,7 @@ def dashboard_page():
     st.markdown("---")
     
     # 2. MAPA DE ATENCION POR AREAS
-    st.subheader("🗺️ Mapa de Atención por Áreas (Áreas Críticas)")
+    st.subheader("🗺️ Mapa de Atención por Áreas")
     st.write("Muestra en qué áreas el Asesor Pedagógico ha tenido que intervenir más (es decir, dónde los niños presentan más obstáculos).")
     
     asesorias_global = supabase.table("asesorias_ia").select("estado, id_evidencia").execute().data
