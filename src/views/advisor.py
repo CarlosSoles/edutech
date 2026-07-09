@@ -265,10 +265,12 @@ def advisor_page():
                 "asesoria_texto": texto,
                 "estado": "PENDIENTE"
             }).execute()
+            db_cache.clear_cache()
         st.rerun()
 
     def resolver_asesoria(asesoria_id, estado_final):
         supabase.table("asesorias_ia").update({"estado": estado_final}).eq("id", asesoria_id).execute()
+        db_cache.clear_cache()
         st.toast("Feedback guardado exitosamente.")
         st.rerun()
 
