@@ -107,7 +107,7 @@ CONTEXTO DEL ALUMNO Y REGISTROS HISTÓRICOS:
         return response.text
 
     def generate_daily_dynamic(self, context_str: str) -> str:
-        prompt = f"Propón 1 dinámica breve y lúdica (niños 3-5 años) para:\n{context_str}\nReglas: 1 párrafo corto, sin saludos ni introducciones."
+        prompt = f"Propón 1 dinámica lúdica (niños 3-5 años) para:\n{context_str}\nReglas: 2 párrafos breves, sin saludos ni introducciones."
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=[prompt],
