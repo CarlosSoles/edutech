@@ -181,7 +181,7 @@ h1, h2, h3 { font-family: 'Fraunces', serif !important; }
     display: block !important;
 }
 /* Button outer shell */
-[data-testid="stFileUploaderDropzone"] button {
+[data-testid="stFileUploaderDropzone"] > div > div > button {
     background: #E0E5E3 !important;
     border: 1px solid #D0D6D3 !important;
     border-radius: 8px !important;
@@ -192,25 +192,15 @@ h1, h2, h3 { font-family: 'Fraunces', serif !important; }
     position: relative !important;
     min-width: 120px !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover {
+[data-testid="stFileUploaderDropzone"] > div > div > button:hover {
     background: #D0D6D3 !important;
 }
 /* Hide EVERY native element inside the button (svg, span, p, div) */
-[data-testid="stFileUploaderDropzone"] button svg,
-[data-testid="stFileUploaderDropzone"] button span,
-[data-testid="stFileUploaderDropzone"] button p,
-[data-testid="stFileUploaderDropzone"] button div {
+[data-testid="stFileUploaderDropzone"] > div > div > button svg,
+[data-testid="stFileUploaderDropzone"] > div > div > button span,
+[data-testid="stFileUploaderDropzone"] > div > div > button p,
+[data-testid="stFileUploaderDropzone"] > div > div > button div {
     display: none !important;
-}
-/* Inject clean Spanish label via ::before */
-[data-testid="stFileUploaderDropzone"] button::before {
-    content: "+ Elegir archivo";
-    display: block !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: #5B6B68 !important;
-    font-family: 'Inter', sans-serif !important;
-    white-space: nowrap !important;
 }
 
 /* Sesiones list */
@@ -395,7 +385,8 @@ with col_left:
             photo = st.file_uploader(
                 "Subir imagen del cuaderno",
                 type=['jpg', 'jpeg', 'png'],
-                label_visibility="collapsed"
+                label_visibility="collapsed",
+                disabled=st.session_state.registro_guardado
             )
 
             if photo:
@@ -404,19 +395,42 @@ with col_left:
                     st.session_state.photo_id = current_photo_id
                     st.session_state.parsed_data = None
                     st.session_state.registro_guardado = False
+                
+                btn_text = "Subir nueva imagen"
+            else:
+                st.session_state.photo_id = None
+                st.session_state.parsed_data = None
+                btn_text = "+ Elegir archivo"
 
-                    with st.status("🧠 Procesando cuaderno de campo con IA...", expanded=True) as status:
-                        try:
-                            image = Image.open(photo)
-                            st.write("🧠 Leyendo y organizando datos...")
-                            agent = AgentGemini()
-                            parsed_json = agent.process_cuaderno(image)
-                            st.session_state.parsed_data = parsed_json
-                            status.update(label="¡Plantilla generada exitosamente!", state="complete", expanded=False)
-                        except Exception as e:
-                            status.update(label="Error en el procesamiento", state="error")
-                            st.error(str(e))
-                            st.stop()
+            st.markdown(f"""
+            <style>
+            [data-testid="stFileUploaderDropzone"] > div > div > button::before {{
+                content: "{btn_text}" !important;
+                display: block !important;
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                color: #5B6B68 !important;
+                font-family: 'Inter', sans-serif !important;
+                white-space: nowrap !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            if photo:
+                if not st.session_state.parsed_data and not st.session_state.registro_guardado:
+                    if st.button("Generar cuaderno de campo", type="primary", use_container_width=True):
+                        with st.status("🧠 Procesando cuaderno de campo con IA...", expanded=True) as status:
+                            try:
+                                image = Image.open(photo)
+                                st.write("🧠 Leyendo y organizando datos...")
+                                agent = AgentGemini()
+                                parsed_json = agent.process_cuaderno(image)
+                                st.session_state.parsed_data = parsed_json
+                                status.update(label="¡Plantilla generada exitosamente!", state="complete", expanded=False)
+                            except Exception as e:
+                                status.update(label="Error en el procesamiento", state="error")
+                                st.error(str(e))
+                                st.stop()
 
 # ── COLUMNA DERECHA: SESIONES DE LA SEMANA ────────────────────────────────────
 with col_right:
@@ -512,14 +526,37 @@ if st.session_state.parsed_data and not st.session_state.registro_guardado:
             niños_evaluados = [{"nombre_detectado": "", "descripcion": "", "retroalimentacion": ""}]
 
         evidencias_a_guardar = []
+        import difflib
         for idx, niño in enumerate(niños_evaluados):
+            nombre_detectado = niño.get('nombre_detectado', '')
             st.markdown(f"**Alumno {idx + 1}**")
-            st.caption(f"🤖 Nombre detectado por la IA: **{niño.get('nombre_detectado', 'No detectado')}**")
+            st.caption(f"🤖 Nombre detectado por la IA: **{nombre_detectado or 'No detectado'}**")
+
+            # Buscar el índice del alumno que mejor coincida
+            default_index = 0
+            if nombre_detectado:
+                nombres_list = list(alumnos_dict.values())
+                nombre_lower = nombre_detectado.lower()
+                match_found = False
+                
+                # 1. Búsqueda por subcadena
+                for i, name in enumerate(nombres_list):
+                    if nombre_lower in name.lower() or name.lower() in nombre_lower:
+                        default_index = i
+                        match_found = True
+                        break
+                        
+                # 2. Búsqueda difusa (fuzzy) si no hay coincidencia
+                if not match_found:
+                    matches = difflib.get_close_matches(nombre_detectado, nombres_list, n=1, cutoff=0.3)
+                    if matches:
+                        default_index = nombres_list.index(matches[0])
 
             id_alumno = st.selectbox(
                 f"Selecciona al alumno {idx+1}:",
                 options=list(alumnos_dict.keys()),
                 format_func=lambda x: alumnos_dict[x],
+                index=default_index,
                 key=f"al_sel_{idx}"
             )
             desc = st.text_area(f"Descripción de evidencias", value=niño.get("descripcion", ""), height=100, key=f"desc_{idx}")

@@ -287,31 +287,40 @@ def attendance_page():
     # ── TAB 1: REGISTRAR ─────────────────────────────────────────────────────
     with tab_registro:
         # Verificar sesión existente
+        # 1. Obtener la fecha seleccionada primero
         today = datetime.date.today()
-        asistencias_previas = {}
-        id_sesion_actual = None
-
-        sesion_existente = supabase.table("sesiones_clase") \
-            .select("*").eq("id_aula", id_aula).eq("fecha", str(today)).execute()
-
-        area_disabled = False
-        if sesion_existente.data:
-            ses = sesion_existente.data[0]
-            id_sesion_actual = ses['id']
-            area_sesion = ses['id_area']
-            area_disabled = True
-            res_asist = supabase.table("asistencias").select("*").eq("id_sesion", id_sesion_actual).execute()
-            asistencias_previas = {a['id_alumno']: a['asistio'] for a in res_asist.data}
-
-        # Card principal — st.container wraps native Streamlit elements correctly
+        
+        # Card principal
         with st.container(border=True):
             st.markdown('<p class="att-card-title">Nueva Sesión de Clase</p>', unsafe_allow_html=True)
 
-            # Fecha + Área
             col_fecha, col_area = st.columns(2)
+            
             with col_fecha:
                 st.markdown('<div class="field-label">Fecha de Sesión</div>', unsafe_allow_html=True)
-                fecha_sesion = st.date_input("Fecha", value=today, label_visibility="collapsed")
+                # Usamos key="fecha_sesion_input" para guardar el estado si es necesario
+                fecha_sesion = st.date_input("Fecha", value=today, max_value=today, label_visibility="collapsed")
+        
+            if fecha_sesion.weekday() >= 5:
+                st.error("❌ Los fines de semana no hay clases. Por favor, selecciona una fecha correcta (Lunes a Viernes).")
+                st.stop()
+                
+            # 2. Verificar sesión existente para la fecha seleccionada
+            asistencias_previas = {}
+            id_sesion_actual = None
+            
+            sesion_existente = supabase.table("sesiones_clase") \
+                .select("*").eq("id_aula", id_aula).eq("fecha", str(fecha_sesion)).execute()
+
+            area_disabled = False
+            if sesion_existente.data:
+                ses = sesion_existente.data[0]
+                id_sesion_actual = ses['id']
+                area_sesion = ses['id_area']
+                area_disabled = True
+                res_asist = supabase.table("asistencias").select("*").eq("id_sesion", id_sesion_actual).execute()
+                asistencias_previas = {a['id_alumno']: a['asistio'] for a in res_asist.data}
+
             with col_area:
                 st.markdown('<div class="field-label">Área a evaluar</div>', unsafe_allow_html=True)
                 if area_disabled:
@@ -323,15 +332,36 @@ def attendance_page():
                         label_visibility="collapsed"
                     )
                 else:
+                    lista_areas_ids = list(areas_dict.keys())
+                    default_area_index = 0
+                    area_por_dia = {
+                        0: "Personal Social",
+                        1: "Psicomotriz",
+                        2: "Comunicación",
+                        3: "Matemática",
+                        4: "Ciencia y tecnología"
+                    }
+                    nombre_esperado = area_por_dia.get(fecha_sesion.weekday())
+                    if nombre_esperado:
+                        for i, area_id in enumerate(lista_areas_ids):
+                            import unicodedata
+                            def normalize(s):
+                                return unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('utf-8').lower()
+                            
+                            if normalize(areas_dict[area_id]) == normalize(nombre_esperado):
+                                default_area_index = i
+                                break
+                                
                     area_seleccionada = st.selectbox(
                         "Área",
-                        options=list(areas_dict.keys()),
+                        options=lista_areas_ids,
                         format_func=lambda x: areas_dict[x],
+                        index=default_area_index,
                         label_visibility="collapsed"
                     )
 
             if area_disabled:
-                st.info("⚠️ Ya tomaste lista para esta fecha. Solo puedes editar el registro existente.")
+                st.info("⚠️ La asistencia de este día ya fue tomada. Si haces un cambio en este registro, se actualizará la asistencia de este día.")
 
         # ── FORM DE ASISTENCIA ────────────────────────────────────────────────
         with st.form("form_asistencia"):

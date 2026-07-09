@@ -24,6 +24,8 @@ Estructura OBLIGATORIA del JSON que debes devolver (SIN backticks ni markdown de
   ]
 }
 
+Devuelve la respuesta ÚNICAMENTE en formato JSON válido. Asegúrate de NO incluir comas finales (trailing commas) antes de cerrar llaves } o corchetes ]
+
 Reglas CRÍTICAS:
 1. Extrae a TODOS los niños mencionados en la imagen y genera una evaluación individual para cada uno.
 2. DEDUCE los campos curriculares (área, competencia, capacidades) de forma inteligente basándote en la anécdota.

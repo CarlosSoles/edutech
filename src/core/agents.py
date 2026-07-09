@@ -95,8 +95,30 @@ TU RESPUESTA DEBE TENER EXACTAMENTE ESTA ESTRUCTURA FIJA:
 2. Dinámica Sugerida: (tu sugerencia aquí)
 3. Qué Observar: (tu criterio de logro aquí)
 
+Ten en cuenta que son alumnos de educación inicial, por lo que las dinámicas sugeridas deben ser lúdicas y apropiadas para su edad.
+
 CONTEXTO DEL ALUMNO Y REGISTROS HISTÓRICOS:
 {context}
+"""
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=[prompt]
+        )
+        return response.text
+
+    def generate_daily_dynamic(self, context_str: str) -> str:
+        prompt = f"""Eres Kubi, el asesor pedagógico virtual para educación inicial.
+El docente te ha pedido una dinámica de clase para el día de hoy basada en el área curricular que corresponde.
+Evita usar dinámicas que ya se hayan trabajado si se mencionan en el contexto.
+
+REGLAS CRÍTICAS:
+- Tu respuesta DEBE tener máximo 2 párrafos cortos.
+- Ve directo al grano, redacta lo justo y necesario.
+- La dinámica debe ser lúdica, factible de realizar en aula y apropiada para educación inicial (niños de 3 a 5 años).
+- NUNCA uses saludos o introducciones largas.
+
+CONTEXTO:
+{context_str}
 """
         response = self.client.models.generate_content(
             model=self.model_name,
