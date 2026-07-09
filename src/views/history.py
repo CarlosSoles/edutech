@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 from src.database.supabase_client import supabase
 from src.utils.document_builder import generate_word_report
+import src.utils.cache as db_cache
 
 def history_page():
     st.title("📚 Mis Registros (Historial)")
@@ -15,30 +16,13 @@ def history_page():
     aula_nombre = aula_data.get('nombre', '')
     aula_edad = aula_data.get('edad', '')
 
-    @st.cache_data(ttl=60)
-    def cargar_areas():
-        try:
-            res = supabase.table("areas").select("*").execute()
-            return {a['id']: a['nombre'] for a in res.data}
-        except Exception:
-            return {}
+    areas = db_cache.get_areas()
+    areas_dict = {a['id']: a['nombre'] for a in areas} if areas else {}
 
-    @st.cache_data(ttl=60)
-    def cargar_alumnos(id_aula):
-        try:
-            res = supabase.table("alumnos").select("*").eq("id_aula", id_aula).execute()
-            return {a['id']: f"{a['nombre']} {a['apellido']}" for a in res.data}
-        except Exception:
-            return {}
+    alumnos = db_cache.get_alumnos_by_aula(st.session_state.user_info.get('id_aula'))
+    alumnos_dict = {a['id']: f"{a['nombre']} {a['apellido']}" for a in alumnos} if alumnos else {}
 
-    areas_dict = cargar_areas()
-    alumnos_dict = cargar_alumnos(st.session_state.user_info.get('id_aula'))
-
-    def load_cuadernos():
-        res = supabase.table("cuadernos_campo").select("*").eq("id_docente", docente_id).order("fecha", desc=True).execute()
-        return res.data
-
-    cuadernos = load_cuadernos()
+    cuadernos = db_cache.get_cuadernos_by_docente(docente_id)
 
     if not cuadernos:
         st.info("Aún no tienes ningún registro guardado.")
@@ -51,7 +35,7 @@ def history_page():
         
         if cuaderno:
             with st.spinner("Generando documento oficial..."):
-                res_ev = supabase.table("evidencias_alumnos").select("*").eq("id_cuaderno", c_id).execute()
+                evidencias = db_cache.get_evidencias_by_cuaderno(c_id)
                 
                 doc_data = {
                     "titulo": cuaderno.get("titulo_actividad", ""),
@@ -66,7 +50,7 @@ def history_page():
                 }
                 
                 niños_data = []
-                for ev in res_ev.data:
+                for ev in evidencias:
                     niños_data.append({
                         "nombre": alumnos_dict.get(ev["id_alumno"], "Desconocido"),
                         "descripcion": ev.get("descripcion", ""),

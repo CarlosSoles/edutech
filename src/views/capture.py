@@ -4,6 +4,7 @@ import datetime
 import streamlit.components.v1 as components
 from src.core.agents import AgentGemini
 from src.database.supabase_client import supabase
+import src.utils.cache as db_cache
 from src.utils.document_builder import generate_word_report
 
 # ── CSS GLOBAL ────────────────────────────────────────────────────────────────
@@ -283,22 +284,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── CARGAR DATOS ──────────────────────────────────────────────────────────────
-@st.cache_data(ttl=60)
-def cargar_alumnos(aula_id):
-    try:
-        return supabase.table("alumnos").select("*").eq("id_aula", aula_id).execute().data
-    except:
-        return []
-
-@st.cache_data(ttl=60)
-def cargar_areas():
-    try:
-        return supabase.table("areas").select("*").execute().data
-    except:
-        return []
-
-alumnos = cargar_alumnos(id_aula)
-areas = cargar_areas()
+alumnos = db_cache.get_alumnos_by_aula(id_aula)
+areas = db_cache.get_areas()
 
 if not alumnos:
     st.warning("⚠️ No tienes alumnos matriculados en tu aula.")
@@ -319,8 +306,8 @@ if "registro_guardado" not in st.session_state:
     st.session_state.registro_guardado = False
 
 # ── SESIONES ──────────────────────────────────────────────────────────────────
-sesiones = supabase.table("sesiones_clase").select("*").eq("id_aula", id_aula).order("fecha", desc=True).execute().data
-cuadernos_db = supabase.table("cuadernos_campo").select("fecha, id_area").eq("id_aula", id_aula).execute().data
+sesiones = db_cache.get_sesiones_by_aula(id_aula)
+cuadernos_db = db_cache.get_cuadernos_by_aula(id_aula)
 pares_cuadernos = {(c['fecha'], c['id_area']) for c in cuadernos_db}
 sesiones_faltantes = [s for s in sesiones if (s['fecha'], s['id_area']) not in pares_cuadernos]
 

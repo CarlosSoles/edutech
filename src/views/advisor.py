@@ -1,6 +1,8 @@
 import streamlit as st
 from src.database.supabase_client import supabase
+from src.database.supabase_client import supabase
 from src.core.agents import AgentAdvisor
+import src.utils.cache as db_cache
 
 # ── CSS GLOBAL ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -237,8 +239,8 @@ def advisor_page():
     # ── CARGAR DATOS ──────────────────────────────────────────────────────────
     @st.cache_data(ttl=60)
     def cargar_datos_base(aula_id):
-        alumnos = supabase.table("alumnos").select("*").eq("id_aula", aula_id).order("apellido").execute().data
-        areas = supabase.table("areas").select("*").execute().data
+        alumnos = db_cache.get_alumnos_by_aula(aula_id)
+        areas = db_cache.get_areas()
         areas_dict = {a['id']: a['nombre'] for a in areas}
         return alumnos, areas_dict
 
@@ -318,7 +320,7 @@ def advisor_page():
                 """, unsafe_allow_html=True)
                 
                 # Datos Asistencia
-                res_asist = supabase.table("asistencias").select("asistio").eq("id_alumno", alumno['id']).execute().data
+                res_asist = db_cache.get_asistencias_by_alumno(alumno['id'])
                 total_clases = len(res_asist)
                 if total_clases > 0:
                     asistencias = sum(1 for a in res_asist if a['asistio'])
@@ -329,9 +331,7 @@ def advisor_page():
                     pct_asist, pct_faltas = 0, 0
 
                 # Datos Cuadernos
-                res_evidencias = supabase.table("evidencias_alumnos").select(
-                    "id, descripcion, retroalimentacion, cuadernos_campo(titulo_actividad, fecha, id_area)"
-                ).eq("id_alumno", alumno['id']).execute().data
+                res_evidencias = db_cache.get_evidencias_by_alumno(alumno['id'])
                 
                 ultima_area = "General"
                 ev_reciente = None
@@ -346,7 +346,7 @@ def advisor_page():
                     ultima_area = areas_dict.get(c.get('id_area'), 'General')
 
                 # Asesorías
-                res_asesorias_todas = supabase.table("asesorias_ia").select("*").eq("id_alumno", alumno['id']).execute().data
+                res_asesorias_todas = db_cache.get_asesorias_by_alumno(alumno['id'])
                 asesoria_activa = next((a for a in res_asesorias_todas if a['estado'] == "PENDIENTE"), None)
 
                 # Metricas Row

@@ -9,18 +9,22 @@ if st.session_state.get("role") != "admin":
 st.title("⚙️ Panel de Administración")
 st.write("Gestión centralizada de Áreas, Aulas, Docentes y Alumnos.")
 
+@st.cache_data(ttl=5)
 def fetch_areas():
     res = supabase.table("areas").select("*").execute()
     return res.data
 
+@st.cache_data(ttl=5)
 def fetch_aulas():
     res = supabase.table("aulas").select("*").execute()
     return res.data
 
+@st.cache_data(ttl=5)
 def fetch_docentes():
     res = supabase.table("docentes").select("*, aulas(nombre, edad)").execute()
     return res.data
 
+@st.cache_data(ttl=5)
 def fetch_alumnos():
     res = supabase.table("alumnos").select("*, aulas(nombre, edad)").execute()
     return res.data

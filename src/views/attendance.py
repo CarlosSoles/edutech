@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 from src.database.supabase_client import supabase
+import src.utils.cache as db_cache
 
 # ── CSS GLOBAL ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -261,17 +262,8 @@ def attendance_page():
     """, unsafe_allow_html=True)
 
     # ── CARGAR DATOS ──────────────────────────────────────────────────────────
-    @st.cache_data(ttl=60)
-    def cargar_areas():
-        return supabase.table("areas").select("*").execute().data
-
-    @st.cache_data(ttl=60)
-    def cargar_alumnos(aula_id):
-        # Ordenar por apellido en la base de datos
-        return supabase.table("alumnos").select("*").eq("id_aula", aula_id).order("apellido").execute().data
-
-    areas = cargar_areas()
-    alumnos = cargar_alumnos(id_aula)
+    areas = db_cache.get_areas()
+    alumnos = db_cache.get_alumnos_by_aula(id_aula)
 
     if not areas or not alumnos:
         st.warning("Asegúrate de que haya alumnos y áreas registradas en el sistema.")
@@ -439,7 +431,8 @@ def attendance_page():
                         ]
                         supabase.table("asistencias").insert(datos_asistencia).execute()
 
-                        st.success("¡Asistencia guardada correctamente!")
+                        db_cache.clear_cache()
+                        st.success("¡Asistencia guardada con éxito!")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error al guardar: {e}")

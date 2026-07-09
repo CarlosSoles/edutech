@@ -4,6 +4,7 @@ import json
 import streamlit.components.v1 as components
 from src.database.supabase_client import supabase
 from src.core.agents import AgentAdvisor
+import src.utils.cache as db_cache
 
 def dashboard_page():
     # Inyección de CSS global basada en el rediseño
@@ -94,7 +95,7 @@ def dashboard_page():
         st.warning("No tienes un aula asignada.")
         st.stop()
         
-    alumnos = supabase.table("alumnos").select("*").eq("id_aula", id_aula).execute().data
+    alumnos = db_cache.get_alumnos_by_aula(id_aula)
     if not alumnos:
         st.info("No hay alumnos matriculados en esta aula.")
         st.stop()
@@ -105,17 +106,17 @@ def dashboard_page():
     total_alumnos = len(alumnos)
     
     # Asistencia
-    sesiones = supabase.table("sesiones_clase").select("id, fecha, id_area").eq("id_aula", id_aula).order("fecha", desc=True).execute().data
+    sesiones = db_cache.get_sesiones_by_aula(id_aula)
     asistencias_hoy = 0
     fecha_asistencia = "Ninguna"
     if sesiones:
         ultima_sesion = sesiones[0]
         fecha_asistencia = ultima_sesion['fecha']
-        asis_data = supabase.table("asistencias").select("asistio").eq("id_sesion", ultima_sesion['id']).execute().data
+        asis_data = db_cache.get_asistencias_by_sesion(ultima_sesion['id'])
         asistencias_hoy = sum(1 for a in asis_data if a['asistio'])
         
     # Faltantes
-    cuadernos = supabase.table("cuadernos_campo").select("fecha, id_area").eq("id_aula", id_aula).execute().data
+    cuadernos = db_cache.get_cuadernos_by_aula(id_aula)
     pares_cuadernos = {(c['fecha'], c['id_area']) for c in cuadernos}
     sesiones_faltantes = []
     for s in sesiones:
@@ -163,7 +164,7 @@ def dashboard_page():
     st.markdown(html_kpis, unsafe_allow_html=True)
         
     if sesiones_faltantes:
-        areas = supabase.table("areas").select("*").execute().data
+        areas = db_cache.get_areas()
         areas_dict = {a['id']: a['nombre'] for a in areas}
         st.warning(f"⚠️ Te falta subir la foto del cuaderno de campo de {len(sesiones_faltantes)} sesiones donde tomaste asistencia.")
         with st.expander("Ver sesiones faltantes"):
@@ -174,12 +175,12 @@ def dashboard_page():
     col1, col2 = st.columns([1.05, 1], gap="large")
     
     with col1:
-        asesorias_global = supabase.table("asesorias_ia").select("estado, id_evidencia").execute().data
-        evidencias_global = supabase.table("evidencias_alumnos").select("id, cuadernos_campo(id_area)").execute().data
+        asesorias_global = db_cache.get_asesorias_global()
+        evidencias_global = db_cache.get_evidencias_global()
         
         ev_area_map = {e['id']: e.get('cuadernos_campo', {}).get('id_area') for e in evidencias_global if e.get('cuadernos_campo')}
         
-        areas = supabase.table("areas").select("*").execute().data
+        areas = db_cache.get_areas()
         areas_dict = {a['id']: a['nombre'] for a in areas}
         
         conteo_asesorias_area = {name: 0 for name in areas_dict.values()}
@@ -310,9 +311,7 @@ def dashboard_page():
             alumno_id_sel = next(k for k, v in alumnos_dict.items() if v == alumno_seleccionado_str)
             
             # Breakdown por área
-            evidencias_alumno = supabase.table("evidencias_alumnos").select(
-                "cuadernos_campo(id_area, fecha)"
-            ).eq("id_alumno", alumno_id_sel).execute().data
+            evidencias_alumno = db_cache.get_evidencias_by_alumno(alumno_id_sel)
             
             if evidencias_alumno:
                 conteo_areas = {name: 0 for name in areas_dict.values()}
@@ -366,7 +365,7 @@ def dashboard_page():
         col_chart, col_chat = st.columns([2, 1], gap="large")
         
         with col_chart:
-            asesorias_alumno = supabase.table("asesorias_ia").select("estado, created_at").eq("id_alumno", alumno_id_sel).execute().data
+            asesorias_alumno = db_cache.get_asesorias_by_alumno(alumno_id_sel)
             
             if asesorias_alumno:
                 # Filtrar solo las resueltas
