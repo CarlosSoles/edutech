@@ -610,6 +610,10 @@ if st.session_state.parsed_data and not st.session_state.registro_guardado:
                     for ev in evidencias_a_guardar
                 ]
                 st.session_state.word_bytes = generate_word_report(doc_data, niños_data)
+                
+                # IMPORTANT: Clear cache so the UI reflects the new record!
+                db_cache.clear_cache()
+                
                 st.session_state.registro_guardado = True
                 st.rerun()
 
