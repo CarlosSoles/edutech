@@ -2,7 +2,6 @@ import streamlit as st
 from PIL import Image
 import datetime
 import streamlit.components.v1 as components
-from src.core.agents import AgentGemini
 from src.database.supabase_client import supabase
 import src.utils.cache as db_cache
 from src.utils.document_builder import generate_word_report
@@ -410,6 +409,7 @@ with col_left:
                             try:
                                 image = Image.open(photo)
                                 st.write("🧠 Leyendo y organizando datos...")
+                                from src.core.agents import AgentGemini
                                 agent = AgentGemini()
                                 parsed_json = agent.process_cuaderno(image)
                                 st.session_state.parsed_data = parsed_json

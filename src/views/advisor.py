@@ -1,7 +1,5 @@
 import streamlit as st
 from src.database.supabase_client import supabase
-from src.database.supabase_client import supabase
-from src.core.agents import AgentAdvisor
 import src.utils.cache as db_cache
 
 # ── CSS GLOBAL ────────────────────────────────────────────────────────────────
@@ -256,6 +254,7 @@ def advisor_page():
     # ── FUNCIONES ASESORÍA ───────────────────────────────────────────────────
     def generar_asesoria(alumno_id, contexto, id_evidencia):
         with st.spinner("Generando asesoría pedagógica..."):
+            from src.core.agents import AgentAdvisor
             agente = AgentAdvisor()
             texto = agente.generate_advice(contexto)
             

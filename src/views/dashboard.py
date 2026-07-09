@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import streamlit.components.v1 as components
 from src.database.supabase_client import supabase
-from src.core.agents import AgentAdvisor
 import src.utils.cache as db_cache
 
 def dashboard_page():
@@ -492,6 +491,7 @@ def dashboard_page():
                 if st.button("💡 Generar Sugerencia para la Clase", use_container_width=True):
                     with st.spinner("Kubi está pensando..."):
                         try:
+                            from src.core.agents import AgentAdvisor
                             agent = AgentAdvisor()
                             suggestion = agent.generate_daily_dynamic(context_str)
                             st.session_state[sug_key] = suggestion
