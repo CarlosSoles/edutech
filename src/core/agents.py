@@ -111,6 +111,6 @@ CONTEXTO DEL ALUMNO Y REGISTROS HISTÓRICOS:
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=[prompt],
-            config=types.GenerateContentConfig(max_output_tokens=150)
+            config=types.GenerateContentConfig(max_output_tokens=400)
         )
         return response.text.strip()
