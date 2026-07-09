@@ -40,6 +40,9 @@ def dashboard_page():
             display:flex; justify-content:space-between; align-items:flex-start;
             margin-bottom:26px;
         }
+        @media (max-width: 600px) {
+            .topbar { flex-direction: column; gap: 10px; }
+        }
         .page-title {
             font-family:'Fraunces',serif; font-weight:600; font-size:26px; margin:0 0 4px;
             display:flex; align-items:center; gap:10px; color: var(--ink);
@@ -52,6 +55,9 @@ def dashboard_page():
         
         /* KPI ROW */
         .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+        @media (max-width: 768px) {
+            .kpi-row { grid-template-columns: 1fr; }
+        }
         .kpi-card{
             background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
             padding:18px 20px;box-shadow:var(--shadow);
@@ -205,6 +211,8 @@ def dashboard_page():
                 colors.append('#D98E3D')
             elif area.lower().startswith("ciencia"):
                 colors.append('#3066BE')
+            elif area == "Matemática":
+                colors.append('#808080')
             else:
                 colors.append('#C24C3F')
                 
@@ -245,6 +253,10 @@ def dashboard_page():
           .section-title{{ font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }}
           .section-desc{{ font-size:12.8px; color:var(--ink-soft); margin:0; line-height:1.5; }}
           .donut-wrap{{ display:flex; align-items:flex-start; gap:20px; }}
+          @media (max-width: 600px) {{
+            .donut-wrap {{ flex-direction: column; align-items: center; }}
+            .legend-list {{ width: 100%; }}
+          }}
           .donut-canvas-box{{ width:130px; height:130px; position:relative; flex-shrink:0; }}
           .donut-center{{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }}
           .donut-center .n{{ font-family:'Fraunces',serif; font-size:18px; font-weight:600; }}
@@ -294,7 +306,7 @@ def dashboard_page():
         </script>
         </body></html>
         """
-        components.html(html_donut, height=340)
+        components.html(html_donut, height=450)
     
     alumno_seleccionado_str = None
     with col2:
@@ -344,6 +356,8 @@ def dashboard_page():
                         color = "#2D6A66"
                     elif area.lower().startswith("ciencia"):
                         color = "#3066BE"
+                    elif area == "Matemática":
+                        color = "#808080"
                     else:
                         color = "#C24C3F"
                     table_rows += f"<tr><td><span style='display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13px;color:var(--ink);'><span style='width:8px;height:8px;border-radius:50%;background:{color};'></span>{area}</span></td><td><div style='display:flex;align-items:center;gap:10px;'><div style='flex:1;height:6px;background:#EEF1EE;border-radius:4px;overflow:hidden;max-width:120px;'><div style='height:100%;border-radius:4px;background:{color};width:{pct}%;'></div></div><span style='font-weight:600;font-family:\"Fraunces\",serif;font-size:14px;width:16px;text-align:right;color:var(--ink);'>{val}</span></div></td></tr>"
@@ -447,15 +461,15 @@ def dashboard_page():
                     </script>
                     </body></html>
                     """
-                    components.html(html_evo, height=450)
+                    components.html(html_evo, height=465)
                 else:
                     st.info("Hay asesorías generadas, pero aún no has calificado si las dinámicas sugeridas fueron útiles o no.")
             else:
                 st.info("Este alumno no tiene intervenciones del Asesor Pedagógico aún.")
 
         with col_chat:
-            # Se usa height=450 para igualar el tamaño del gráfico de la izquierda
-            with st.container(border=True, height=450):
+            # Se usa height=465 para igualar el tamaño del gráfico de la izquierda
+            with st.container(border=True, height=465):
                 nombre_docente = st.session_state.user_info.get('nombre', 'Docente')
                 
                 # Fetch recent dynamics to avoid repetition if possible
@@ -488,22 +502,44 @@ def dashboard_page():
                 context_str = f"Clase general (todo el salón).\nÁrea de hoy: {area_hoy}\n"
                 sug_key = f'kubi_sug_general_{datetime.datetime.today().strftime("%Y%m%d")}'
                 
-                if st.button("💡 Generar Sugerencia para la Clase", use_container_width=True):
-                    with st.spinner("Kubi está pensando..."):
-                        try:
-                            from src.core.agents import AgentAdvisor
-                            agent = AgentAdvisor()
-                            suggestion = agent.generate_daily_dynamic(context_str)
-                            st.session_state[sug_key] = suggestion
-                        except Exception as e:
-                            st.error(f"Error: {e}")
-                            
+                sug_accepted_key = f'{sug_key}_accepted'
+                
+                if sug_key not in st.session_state:
+                    if st.button("💡 Generar Sugerencia para la Clase", use_container_width=True):
+                        with st.spinner("Kubi está pensando..."):
+                            try:
+                                from src.core.agents import AgentAdvisor
+                                agent = AgentAdvisor()
+                                suggestion = agent.generate_daily_dynamic(context_str)
+                                st.session_state[sug_key] = suggestion
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                                
                 if sug_key in st.session_state:
                     st.markdown("""
-                    <div style="background:#E6F4EC; border:1px solid #b6dfc8; border-radius:10px; padding:14px; margin-top:12px; font-size:13px; color:#1E2A28; line-height:1.5;">
+                    <div style="background:#E6F4EC; border:1px solid #b6dfc8; border-radius:10px; padding:14px; margin-top:12px; margin-bottom:12px; font-size:13px; color:#1E2A28; line-height:1.5;">
                         <strong>Sugerencia de Kubi:</strong><br><br>
                         {}
                     </div>
                     """.format(st.session_state[sug_key].replace('\n', '<br>')), unsafe_allow_html=True)
+                    
+                    if not st.session_state.get(sug_accepted_key, False):
+                        col_btn1, col_btn2 = st.columns(2)
+                        with col_btn1:
+                            if st.button("🔄 Generar otra", use_container_width=True):
+                                with st.spinner("Generando nueva sugerencia..."):
+                                    try:
+                                        from src.core.agents import AgentAdvisor
+                                        agent = AgentAdvisor()
+                                        suggestion = agent.generate_daily_dynamic(context_str)
+                                        st.session_state[sug_key] = suggestion
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error: {e}")
+                        with col_btn2:
+                            if st.button("✅ Muchas gracias", use_container_width=True):
+                                st.session_state[sug_accepted_key] = True
+                                st.rerun()
 
 dashboard_page()

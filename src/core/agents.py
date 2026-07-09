@@ -107,21 +107,10 @@ CONTEXTO DEL ALUMNO Y REGISTROS HISTÓRICOS:
         return response.text
 
     def generate_daily_dynamic(self, context_str: str) -> str:
-        prompt = f"""Eres Kubi, el asesor pedagógico virtual para educación inicial.
-El docente te ha pedido una dinámica de clase para el día de hoy basada en el área curricular que corresponde.
-Evita usar dinámicas que ya se hayan trabajado si se mencionan en el contexto.
-
-REGLAS CRÍTICAS:
-- Tu respuesta DEBE tener máximo 2 párrafos cortos.
-- Ve directo al grano, redacta lo justo y necesario.
-- La dinámica debe ser lúdica, factible de realizar en aula y apropiada para educación inicial (niños de 3 a 5 años).
-- NUNCA uses saludos o introducciones largas.
-
-CONTEXTO:
-{context_str}
-"""
+        prompt = f"Propón 1 dinámica breve y lúdica (niños 3-5 años) para:\n{context_str}\nReglas: 1 párrafo corto, sin saludos ni introducciones."
         response = self.client.models.generate_content(
             model=self.model_name,
-            contents=[prompt]
+            contents=[prompt],
+            config=types.GenerateContentConfig(max_output_tokens=150)
         )
         return response.text.strip()
