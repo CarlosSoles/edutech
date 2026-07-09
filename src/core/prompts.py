@@ -11,15 +11,15 @@ Estructura OBLIGATORIA del JSON que debes devolver (SIN backticks ni markdown de
   "titulo_actividad": "Título breve de la Actividad (dedúcelo de las acciones)",
   "fecha": "Fecha detectada en la nota (pon '' si no hay)",
   "area_detectada": "Área curricular deducida (Ej: Matemática, Comunicación, Personal Social, Psicomotriz, Ciencia)",
-  "competencia": "Competencia principal deducida (Puntual, máximo 1 línea)",
+  "competencia": "Competencia principal deducida (Puntual, máximo 2 línea)",
   "estandar": "Estándar de aprendizaje breve relacionado a la competencia",
   "capacidades": "Capacidades puntuales",
   "criterios": "Criterio de evaluación breve",
   "alumnos_evaluados": [
     {
       "nombre_detectado": "Nombre del niño/niña",
-      "descripcion": "Situación Observada redactada de forma formal y pedagógica. Máximo 2 líneas breves. (Ej: 'El estudiante participó activamente en...')",
-      "retroalimentacion": "Interpretación pedagógica y sugerencia de retroalimentación directa y concisa. Máximo 2 líneas."
+      "descripcion": "Situación Observada redactada de forma formal y pedagógica. Mínimo 2 líneas breves y máximo 3 líneas breves. (Ej: 'El estudiante participó activamente en...')",
+      "retroalimentacion": "Interpretación pedagógica y sugerencia de retroalimentación directa y concisa. Mínimo 2 líneas breves y máximo 3 líneas breves."
     }
   ]
 }
@@ -27,6 +27,6 @@ Estructura OBLIGATORIA del JSON que debes devolver (SIN backticks ni markdown de
 Reglas CRÍTICAS:
 1. Extrae a TODOS los niños mencionados en la imagen y genera una evaluación individual para cada uno.
 2. DEDUCE los campos curriculares (área, competencia, capacidades) de forma inteligente basándote en la anécdota.
-3. SÉ MUY CONCISO Y DIRECTO. Redacciones de 1 o 2 líneas cortas como máximo por campo.
+3. SÉ MUY CONCISO Y DIRECTO. Redacciones de 2 o 3 líneas cortas como máximo por campo.
 4. MANTÉN el formato JSON válido estrictamente (verifica comillas y corchetes).
 """
