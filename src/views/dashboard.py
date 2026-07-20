@@ -372,174 +372,97 @@ def dashboard_page():
             else:
                 st.info("Este alumno no tiene evaluaciones registradas aún. ¡Tómale foto a su próximo cuaderno de campo!")
 
-    # --- EFECTIVIDAD PEDAGÓGICA Y ASESOR KUBI ---
+    # --- EFECTIVIDAD PEDAGÓGICA ---
     if alumno_seleccionado_str:
         st.markdown("<br>", unsafe_allow_html=True)
-        col_chart, col_chat = st.columns([2, 1], gap="large")
         
-        with col_chart:
-            asesorias_alumno = db_cache.get_asesorias_by_alumno(alumno_id_sel)
+        asesorias_alumno = db_cache.get_asesorias_by_alumno(alumno_id_sel)
+        
+        if asesorias_alumno:
+            # Filtrar solo las resueltas
+            asesorias_resueltas = [a for a in asesorias_alumno if a.get('estado') in ['MEJORANDO', 'MANTIENE_NIVEL']]
             
-            if asesorias_alumno:
-                # Filtrar solo las resueltas
-                asesorias_resueltas = [a for a in asesorias_alumno if a.get('estado') in ['MEJORANDO', 'MANTIENE_NIVEL']]
+            if asesorias_resueltas:
+                # Ordenar por fecha cronológicamente
+                asesorias_resueltas.sort(key=lambda x: x['created_at'])
                 
-                if asesorias_resueltas:
-                    # Ordenar por fecha cronológicamente
-                    asesorias_resueltas.sort(key=lambda x: x['created_at'])
+                historial_fechas = []
+                historial_estados = []
+                
+                for i, asis in enumerate(asesorias_resueltas):
+                    fecha_corta = asis['created_at'][:10]
+                    historial_fechas.append(f"S{i+1} ({fecha_corta})")
+                    historial_estados.append(asis['estado'])
                     
-                    historial_fechas = []
-                    historial_estados = []
-                    
-                    for i, asis in enumerate(asesorias_resueltas):
-                        fecha_corta = asis['created_at'][:10]
-                        historial_fechas.append(f"S{i+1} ({fecha_corta})")
-                        historial_estados.append(asis['estado'])
-                        
-                    total_resueltas = len(asesorias_resueltas)
-                    exitos = sum(1 for a in asesorias_resueltas if a['estado'] == 'MEJORANDO')
-                    pct_exito = round((exitos / total_resueltas) * 100) if total_resueltas > 0 else 0
-                    
-                    html_evo = f"""
-                    <!DOCTYPE html>
-                    <html><head>
-                    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-                    <style>
-                      :root{{ --ink: #1E2A28; --ink-soft: #5B6B68; --card: #FFFFFF; --line: #E4E7E1; --teal: #2D6A66; --amber: #D98E3D; --amber-soft: #FBEEDF; --radius: 14px; --shadow: 0 1px 2px rgba(30,42,40,0.04), 0 4px 16px rgba(30,42,40,0.04); }}
-                      body{{ margin:0; font-family:'Inter', sans-serif; color:var(--ink); background:transparent; }}
-                      .section-card{{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); height:100%; }}
-                      .section-head{{ margin-bottom:16px; }}
-                      .section-title{{ font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }}
-                      .section-desc{{ font-size:12.8px; color:var(--ink-soft); margin:0; line-height:1.5; }}
-                      .evo-top{{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px; }}
-                      .evo-metric-label{{ font-size:12.5px; color:var(--ink-soft); margin-bottom:2px; }}
-                      .evo-metric-value{{ font-family:'Fraunces',serif; font-size:30px; font-weight:600; color:var(--teal); }}
-                      .evo-chart-box{{ height:220px; position:relative; }}
-                      .evo-empty-note{{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft); background:var(--amber-soft); border-radius:8px; padding:9px 12px; margin-top:12px; }}
-                      .evo-empty-note svg{{ width:14px; height:14px; flex-shrink:0; color:var(--amber); }}
-                    </style>
-                    </head><body>
-                    <div class="section-card">
-                      <div class="section-head">
-                        <h2 class="section-title">🕓 Evolución del Aprendizaje</h2>
-                        <p class="section-desc">Índice de progreso general.</p>
-                      </div>
-                      <div class="evo-top">
-                        <div>
-                          <div class="evo-metric-label">Índice de Progreso</div>
-                          <div class="evo-metric-value">{pct_exito}%</div>
-                        </div>
-                      </div>
-                      <div class="evo-chart-box">
-                        <canvas id="evoChart"></canvas>
-                      </div>
-                      {"<div class='evo-empty-note'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M12 9v4M12 17h.01M10.3 3.9 2.6 18a2 2 0 0 0 1.8 3h15.2a2 2 0 0 0 1.8-3L13.7 3.9a2 2 0 0 0-3.4 0Z'/></svg>Solo hay 1 sesión evaluada.</div>" if len(historial_fechas) == 1 else ""}
+                total_resueltas = len(asesorias_resueltas)
+                exitos = sum(1 for a in asesorias_resueltas if a['estado'] == 'MEJORANDO')
+                pct_exito = round((exitos / total_resueltas) * 100) if total_resueltas > 0 else 0
+                
+                html_evo = f"""
+                <!DOCTYPE html>
+                <html><head>
+                <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+                <style>
+                  :root{{ --ink: #1E2A28; --ink-soft: #5B6B68; --card: #FFFFFF; --line: #E4E7E1; --teal: #2D6A66; --amber: #D98E3D; --amber-soft: #FBEEDF; --radius: 14px; --shadow: 0 1px 2px rgba(30,42,40,0.04), 0 4px 16px rgba(30,42,40,0.04); }}
+                  body{{ margin:0; font-family:'Inter', sans-serif; color:var(--ink); background:transparent; }}
+                  .section-card{{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); height:100%; }}
+                  .section-head{{ margin-bottom:16px; }}
+                  .section-title{{ font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }}
+                  .section-desc{{ font-size:12.8px; color:var(--ink-soft); margin:0; line-height:1.5; }}
+                  .evo-top{{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px; }}
+                  .evo-metric-label{{ font-size:12.5px; color:var(--ink-soft); margin-bottom:2px; }}
+                  .evo-metric-value{{ font-family:'Fraunces',serif; font-size:30px; font-weight:600; color:var(--teal); }}
+                  .evo-chart-box{{ height:220px; position:relative; }}
+                  .evo-empty-note{{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft); background:var(--amber-soft); border-radius:8px; padding:9px 12px; margin-top:12px; }}
+                  .evo-empty-note svg{{ width:14px; height:14px; flex-shrink:0; color:var(--amber); }}
+                </style>
+                </head><body>
+                <div class="section-card">
+                  <div class="section-head">
+                    <h2 class="section-title">🕓 Evolución del Aprendizaje</h2>
+                    <p class="section-desc">Índice de progreso general.</p>
+                  </div>
+                  <div class="evo-top">
+                    <div>
+                      <div class="evo-metric-label">Índice de Progreso</div>
+                      <div class="evo-metric-value">{pct_exito}%</div>
                     </div>
-                    <script>
-                      Chart.defaults.font.family = "Inter, sans-serif";
-                      new Chart(document.getElementById('evoChart'), {{
-                        type: 'line',
-                        data: {{
-                          labels: {json.dumps(historial_fechas)},
-                          datasets: [{{
-                            data: {json.dumps([100 if e == 'MEJORANDO' else 50 for e in historial_estados])},
-                            borderColor: '#2D6A66',
-                            backgroundColor: 'rgba(45,106,102,0.08)',
-                            pointBackgroundColor: '#2D6A66',
-                            pointRadius: 6,
-                            fill: true,
-                            tension: 0.35,
-                            spanGaps: false
-                          }}]
-                        }},
-                        options: {{
-                          responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }},
-                          scales: {{ y: {{ min: 0, max: 100, grid: {{ color: '#EFF1EE' }}, ticks: {{ callback: v => v + '%' }} }}, x: {{ grid: {{ display: false }} }} }}
-                        }}
-                      }});
-                    </script>
-                    </body></html>
-                    """
-                    components.html(html_evo, height=465)
-                else:
-                    st.info("Hay asesorías generadas, pero aún no has calificado si las dinámicas sugeridas fueron útiles o no.")
-            else:
-                st.info("Este alumno no tiene intervenciones del Asesor Pedagógico aún.")
-
-        with col_chat:
-            # Se usa height=465 para igualar el tamaño del gráfico de la izquierda
-            with st.container(border=True, height=465):
-                nombre_docente = st.session_state.user_info.get('nombre', 'Docente')
-                
-                # Fetch recent dynamics to avoid repetition if possible
-                area_por_dia = {
-                    0: "Personal Social",
-                    1: "Psicomotriz",
-                    2: "Comunicación",
-                    3: "Matemática",
-                    4: "Ciencia y tecnología",
-                    5: "Día Libre (sábado)",
-                    6: "Día Libre (domingo)"
-                }
-                weekday = datetime.datetime.today().weekday()
-                area_hoy = area_por_dia.get(weekday, "General")
-                
-                st.markdown(f"""
-                <div style="text-align:center; padding-top: 10px; padding-bottom: 5px;">
-                    <div style="font-size:42px; margin-bottom:8px;">🤖</div>
-                    <h2 style="font-family:'Fraunces',serif; font-size:18px; margin:0 0 12px; color:var(--ink);">Kubi</h2>
-                    <p style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:16px;">
-                    ¡Buen día miss <b>{nombre_docente}</b>!<br><br>
-                    Soy tu asistente pedagógico inteligente. Analizo el área curricular correspondiente a hoy (<b>{area_hoy}</b>) para recomendarte actividades lúdicas e interactivas adaptadas para la edad de los niños.<br><br>
-                    ¿Te gustaría que genere una sugerencia de dinámica para la clase de hoy?
-                    </p>
+                  </div>
+                  <div class="evo-chart-box">
+                    <canvas id="evoChart"></canvas>
+                  </div>
+                  {"<div class='evo-empty-note'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M12 9v4M12 17h.01M10.3 3.9 2.6 18a2 2 0 0 0 1.8 3h15.2a2 2 0 0 0 1.8-3L13.7 3.9a2 2 0 0 0-3.4 0Z'/></svg>Solo hay 1 sesión evaluada.</div>" if len(historial_fechas) == 1 else ""}
                 </div>
-                """, unsafe_allow_html=True)
-                weekday = datetime.datetime.today().weekday()
-                area_hoy = area_por_dia.get(weekday, "General")
-                
-                context_str = f"Clase general (todo el salón).\nÁrea de hoy: {area_hoy}\n"
-                sug_key = f'kubi_sug_general_{datetime.datetime.today().strftime("%Y%m%d")}'
-                
-                sug_accepted_key = f'{sug_key}_accepted'
-                
-                if sug_key not in st.session_state:
-                    if st.button("💡 Generar Sugerencia para la Clase", use_container_width=True):
-                        with st.spinner("Kubi está pensando..."):
-                            try:
-                                from src.core.agents import AgentAdvisor
-                                agent = AgentAdvisor()
-                                suggestion = agent.generate_daily_dynamic(context_str)
-                                st.session_state[sug_key] = suggestion
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error: {e}")
-                                
-                if sug_key in st.session_state:
-                    st.markdown("""
-                    <div style="background:#E6F4EC; border:1px solid #b6dfc8; border-radius:10px; padding:14px; margin-top:12px; margin-bottom:12px; font-size:13px; color:#1E2A28; line-height:1.5;">
-                        <strong>Sugerencia de Kubi:</strong><br><br>
-                        {}
-                    </div>
-                    """.format(st.session_state[sug_key].replace('\n', '<br>')), unsafe_allow_html=True)
-                    
-                    if not st.session_state.get(sug_accepted_key, False):
-                        col_btn1, col_btn2 = st.columns(2)
-                        with col_btn1:
-                            if st.button("🔄 Generar otra", use_container_width=True):
-                                with st.spinner("Generando nueva sugerencia..."):
-                                    try:
-                                        from src.core.agents import AgentAdvisor
-                                        agent = AgentAdvisor()
-                                        suggestion = agent.generate_daily_dynamic(context_str)
-                                        st.session_state[sug_key] = suggestion
-                                        st.rerun()
-                                    except Exception as e:
-                                        st.error(f"Error: {e}")
-                        with col_btn2:
-                            if st.button("✅ Muchas gracias", use_container_width=True):
-                                st.session_state[sug_accepted_key] = True
-                                st.rerun()
+                <script>
+                  Chart.defaults.font.family = "Inter, sans-serif";
+                  new Chart(document.getElementById('evoChart'), {{
+                    type: 'line',
+                    data: {{
+                      labels: {json.dumps(historial_fechas)},
+                      datasets: [{{
+                        data: {json.dumps([100 if e == 'MEJORANDO' else 50 for e in historial_estados])},
+                        borderColor: '#2D6A66',
+                        backgroundColor: 'rgba(45,106,102,0.08)',
+                        pointBackgroundColor: '#2D6A66',
+                        pointRadius: 6,
+                        fill: true,
+                        tension: 0.35,
+                        spanGaps: false
+                      }}]
+                    }},
+                    options: {{
+                      responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }},
+                      scales: {{ y: {{ min: 0, max: 100, grid: {{ color: '#EFF1EE' }}, ticks: {{ callback: v => v + '%' }} }}, x: {{ grid: {{ display: false }} }} }}
+                    }}
+                  }});
+                </script>
+                </body></html>
+                """
+                components.html(html_evo, height=465)
+            else:
+                st.info("Hay asesorías generadas, pero aún no has calificado si las dinámicas sugeridas fueron útiles o no.")
+        else:
+            st.info("Este alumno no tiene intervenciones del Asesor Pedagógico aún.")
 
 dashboard_page()
